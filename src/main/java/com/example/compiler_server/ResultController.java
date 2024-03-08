@@ -1,12 +1,5 @@
 package com.example.compiler_server;
 
-import org.apache.tomcat.util.http.fileupload.FileUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -18,9 +11,14 @@ import java.nio.file.Paths;
 import java.util.*;
 
 @RestController
+@CrossOrigin("*")
 public class ResultController {
 
+//expect output
+
+
     @PostMapping("/submissions/batch")
+    @ResponseBody
     public String handleJson(@RequestBody SubmissionRequest submissionRequest) {
         String resourceDirectory = "D:\\Hutech\\DACN\\server\\compiler_server\\src\\main\\resources\\docker";
         String tmpDirectory = resourceDirectory + File.separator + "tmp" + File.separator + UUID.randomUUID().toString();
@@ -34,12 +32,16 @@ public class ResultController {
         for (int i = 0; i < submissionRequest.getSubmissions().size(); i++) {
 
             submission= submissionRequest.getSubmissions().get(i);
-            String action="ACTION=";
+            String action;
             if (i==0){
-                action += "start";
+                action = "ACTION=start";
             }else if (i==(submissionRequest.getSubmissions().size())-1){
-                action += "stop";
-            }else action+="loop";
+                action = "ACTION=stop";
+            }
+            else action="ACTION=loop";
+            if (submissionRequest.getSubmissions().size()==1){
+                action = "ACTION=singlefile";
+            }
             System.out.println(action);
 
             if ("java".equals(submission.getLanguage())) {
@@ -88,7 +90,7 @@ public class ResultController {
                         // Bắt đầu tiến trình
                         Process process2 = pb2.start();
                         process2.waitFor();
-
+                        mainExeFile.delete();
                     }
 
 
@@ -148,7 +150,7 @@ public class ResultController {
 
         //docker build -t csharp -f csharp/Dockerfile .
         if ("csharp".equals(language)) {
-            String execFilePath = tmpDirectory + File.separator + "Main.java";
+            String execFilePath = tmpDirectory + File.separator + "Main.cs";
             writeSourceCodeNInputFile(sourceCode, stdin, execFilePath, inputFilePath);
 
             try {
@@ -175,7 +177,6 @@ public class ResultController {
                     process2.waitFor();
 
                 }
-
 
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
