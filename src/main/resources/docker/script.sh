@@ -12,16 +12,42 @@ else
     input=""
 fi
 
-START=$(date +%s.%4N)
-echo "{" > /tmp/result.json
-echo -n "\"output\": \"" >> /tmp/result.json    # Sử dụng -n để không tạo dòng mới
-# Chạy Main.java với giá trị của input
-echo "$input" | $compiler $file | tr '\n' ' ' >> /tmp/result.json  # Thay thế ký tự xuống dòng bằng khoảng trắng
-echo "\"," >> /tmp/result.json
 
+echo "{" > /tmp/result.json
+
+# Chạy file với giá trị của input
+#output=$("$compiler" "$file" <<< "$input" 2>&1)
+START=$(date +%s.%4N)
+output=$(timeout 5s "$compiler" "$file" <<< "$input" 2>&1)
 END=$(date +%s.%4N)
+status=$?
+ echo " \"status\": \"$status \", " >> /tmp/result.json
+# Kiểm tra kết quả của timeout
+if [ $status -eq 124 ]; then
+    # Nếu quá thời gian, ghi thông báo vào file JSON và kết thúc
+    echo "\"Message\": \"Time exceeded\"," >> /tmp/result.json
+    echo "}" >> /tmp/result.json
+    exit
+fi
+
+
+# Kiểm tra xem có lỗi không
+if [ $status -eq 0 ]; then
+  echo " \"Message\": \"Accepted\", " >> /tmp/result.json
+    # Nếu không có lỗi, mã hoá output và ghi vào file
+    echo -n "\"stdout\": \"" >> /tmp/result.json
+    echo -n "$output" | base64 | tr -d '\n' >> /tmp/result.json
+    echo "\"," >> /tmp/result.json
+else
+    # Nếu có lỗi, ghi lỗi vào file
+    echo " \"Message\": \" Compilation Failed\", " >> /tmp/result.json
+    echo -n "\"error\": \"" >> /tmp/result.json
+    echo -n "$output" | base64 | tr -d '\n' >> /tmp/result.json
+    echo "\"," >> /tmp/result.json
+fi
+
 
 runtime=$(echo "$END - $START" | bc)
 
-echo "\"runtime\": \"$runtime\"" >> /tmp/result.json
+echo "\"time\": \"$runtime\"" >> /tmp/result.json
 echo "}" >> /tmp/result.json

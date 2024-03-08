@@ -1,8 +1,8 @@
 FROM openjdk:11
 WORKDIR /app
-COPY script.sh .
+COPY ../batchscript.sh .
 RUN apt-get update && apt-get install -y bc
 
-ENTRYPOINT ["./script.sh"]
+ENTRYPOINT ["./batchscript.sh"]
 
 
