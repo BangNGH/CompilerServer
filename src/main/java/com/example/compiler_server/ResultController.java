@@ -1,8 +1,6 @@
 package com.example.compiler_server;
 
 import org.springframework.web.bind.annotation.*;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -26,7 +24,9 @@ public class ResultController {
         if (!tmpFolder.exists()) {
             tmpFolder.mkdirs();
         }
+        System.out.println(submissionRequest.getSubmissions());
         String inputFilePath = tmpDirectory + File.separator + "input.txt";
+        String expect_outputFilePath = tmpDirectory + File.separator + "expected_output.txt";
         String jsonPath = tmpDirectory + File.separator + "result.json";
         Submission submission;
         for (int i = 0; i < submissionRequest.getSubmissions().size(); i++) {
@@ -46,7 +46,7 @@ public class ResultController {
 
             if ("java".equals(submission.getLanguage())) {
                 String execFilePath = tmpDirectory + File.separator + "Main.java";
-                writeSourceCodeNInputFile(submission.getSource_code(), submission.getStdin(), execFilePath, inputFilePath);
+                writeSourceCodeNInputFile(submission.getSource_code(), submission.getStdin(), execFilePath, inputFilePath, expect_outputFilePath, submission.getExpected_output());
                 try {
                     String absoluteFilePathToExecute = tmpDirectory + ":/tmp";
                     ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "docker", "run", "--rm", "-e", "COMPILER=java", "-e", "FILE=/tmp/Main.java", "-e", action,"-v", absoluteFilePathToExecute, "java");
@@ -66,7 +66,7 @@ public class ResultController {
             //docker build -t csharp -f csharp/Dockerfile .
            else if ("csharp".equals(submission.getLanguage())) {
                 String execFilePath = tmpDirectory + File.separator + "Main.cs";
-                writeSourceCodeNInputFile(submission.getSource_code(), submission.getStdin(), execFilePath, inputFilePath);
+                writeSourceCodeNInputFile(submission.getSource_code(), submission.getStdin(), execFilePath, inputFilePath, expect_outputFilePath, submission.getExpected_output());
 
                 try {
                     String absoluteFilePathToExecute = tmpDirectory + ":/tmp";
@@ -104,7 +104,7 @@ public class ResultController {
     }
 
 //Return submission
-    @PostMapping("/run")
+/*    @PostMapping("/run")
     @ResponseBody
     public String runJava(@RequestBody String source) throws IOException {
 
@@ -120,6 +120,7 @@ public class ResultController {
             tmpFolder.mkdirs();
         }
         String inputFilePath = tmpDirectory + File.separator + "input.txt";
+        String expect_outputFilePath = tmpDirectory + File.separator + "input.txt";
         String jsonPath = tmpDirectory + File.separator + "result.json";
 
         //Complete Java Compiler server
@@ -185,7 +186,7 @@ public class ResultController {
             return returnJson(tmpDirectory, tmpFolder);
         }
         return "Other Language";
-    }
+    }*/
 
     //Return json & remove all
     private String returnJson(String tmpDirectory, File tmpFolder) {
@@ -202,13 +203,18 @@ public class ResultController {
     }
 
     //write source code & stdin to compile
-    private void writeSourceCodeNInputFile(String sourceCode, String stdin, String execFilePath,String inputFilePath) {
+    private void writeSourceCodeNInputFile(String sourceCode, String stdin, String execFilePath,String inputFilePath, String expect_outputFilePath,String expect_output) {
         try {
 
             FileWriter writer = new FileWriter(execFilePath);
             writer.write(sourceCode);
             writer.close();
 
+            if (expect_output!=null) {
+                FileWriter expect_outputWriter = new FileWriter(expect_outputFilePath);
+               expect_outputWriter.write(expect_output);
+                expect_outputWriter.close();
+            }
             if (stdin != null) {
                 FileWriter inputWriter = new FileWriter(inputFilePath);
                 inputWriter.write(stdin);
@@ -221,15 +227,5 @@ public class ResultController {
     }
 
     // Hàm mã hoá Base64
-    public static String encode(String input) {
-        byte[] encodedBytes = Base64.getEncoder().encode(input.getBytes());
-        return new String(encodedBytes);
-    }
-
-    // Hàm giải mã Base64
-    public static String decode(String input) {
-        byte[] decodedBytes = Base64.getDecoder().decode(input);
-        return new String(decodedBytes);
-    }
 
 }

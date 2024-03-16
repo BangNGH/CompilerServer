@@ -4,18 +4,17 @@ public class Submission {
     private String language;
     private String stdin;
     private String source_code;
+    private String expected_output;
 
-    public String getLanguage() {
-        return language;
+    public String getExpected_output() {
+        return expected_output;
     }
 
-    @Override
-    public String toString() {
-        return "Submission{" +
-                "language='" + language + '\'' +
-                ", stdin='" + stdin + '\'' +
-                ", source_code='" + source_code + '\'' +
-                '}';
+    public void setExpected_output(String expected_output) {
+        this.expected_output = expected_output;
+    }
+    public String getLanguage() {
+        return language;
     }
 
     public void setLanguage(String language) {
@@ -37,6 +36,7 @@ public class Submission {
     public void setSource_code(String source_code) {
         this.source_code = source_code;
     }
+
 
     // Các getters và setters khác nếu cần
 }
